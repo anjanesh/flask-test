@@ -12,7 +12,7 @@
         </thead>
         {% for location in data['locations'] %}
         <tr>
-            <td>{{ location.product_id }}</td>
+            <td>{{ location.location_id }}</td>
             <td>{{ location.name }}</td>
             <td><a href="/location/view/{{ location.location_id }}">View</a</td>
         </tr>
