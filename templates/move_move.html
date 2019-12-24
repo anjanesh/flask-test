@@ -21,7 +21,7 @@
                 <td>From</td>
                 <td>
                 <select name="from_location_id">
-                    {% for location in data['from_locations'] %}
+                    {% for location in data['locations'] %}
                     <option value="{{ location['location_id'] }}">
                         {{ location['name'] }}
                     </option>
@@ -33,7 +33,7 @@
                 <td>To</td>
                 <td>
                 <select name="to_location_id">
-                    {% for location in data['to_locations'] %}
+                    {% for location in data['locations'] %}
                     <option value="{{ location['location_id'] }}">
                         {{ location['name'] }}
                     </option>
