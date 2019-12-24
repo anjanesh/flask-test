@@ -333,6 +333,66 @@ def move_pop():
 def move_move():
     data = {}
     cur = mysql.connection.cursor()
+
+    if request.method == 'POST':
+        try:
+            product_id = request.form['product_id']
+            from_location_id = request.form['from_location_id']
+            to_location_id = request.form['to_location_id']
+            qty = request.form['qty']
+
+            sql = """
+            SELECT pm.`from_location`, pm.`to_location`, pm.`qty`
+            FROM `ProductMovement` pm
+            WHERE pm.`product_id` = %s AND pm.`to_location` = %s
+            """ % (product_id, from_location_id) # Frm Vashi to Seawoods, need to look how many products are there in Vashi (from_location_id)
+            cur.execute(sql)
+            pm_rows = cur.fetchall()
+            data["Product_in_Location"] = 0
+
+            for pm_row in pm_rows:
+
+                print("Location : %s", data["Product_in_Location"])
+
+                if pm_row['from_location'] != 0:
+                    data["Product_in_Location"] -= pm_row['qty']
+
+                if pm_row['to_location'] != 0:
+                    data["Product_in_Location"] += pm_row['qty']
+
+            print("Product ID %s left in location %s = %s" % (product_id, to_location_id, data["Product_in_Location"]))
+            if data["Product_in_Location"] <= 0:
+                return "No Products in Location"
+
+            sql = """
+            INSERT INTO `ProductMovement` SET
+            `timestamp` = NOW(),
+            `from_location` = %s,
+            `to_location` = %s,
+             `product_id` = %s,
+             `qty` = %s
+            """ % (from_location_id, to_location_id, product_id, qty)
+            cur.execute(sql)
+            mysql.connection.commit()
+            flash("Successfully moved product to location", "success")
+            return redirect("/move/list", code=302) # This is to disable refresh
+        except Exception as e:
+            flash("Error : {}".format(e), "danger")
+    else:
+        cur.execute("SELECT * FROM `Product`")
+        if cur.rowcount == 0:
+            return "No Products yet"
+        else:
+            row = cur.fetchall()
+            data['products'] = row
+
+        cur.execute("SELECT * FROM `Location`")
+        if cur.rowcount == 0:
+            return "No Locations yet"
+        else:
+            row = cur.fetchall()
+            data['locations'] = row
+
     return render_template('move_move.html', data = data)
 
 @app.route('/balance')
