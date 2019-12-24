@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/move">Back to Movment Index</a></div>
+    <h1>Push Product To Location</h1>
+    <div>
+        <form class="" action="/move/push" method="post">
+        <table>
+            <tr>
+                <td>Product</td>
+                <td>
+                <select name="product_id">
+                    {% for product in data['products'] %}
+                    <option value="{{ product['product_id'] }}">
+                        {{ product['name'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+                </td>
+            </tr>
+            <tr>
+                <td>To</td>
+                <td>
+                <select name="location_id">
+                    {% for location in data['locations'] %}
+                    <option value="{{ location['location_id'] }}">
+                        {{ location['name'] }}
+                    </option>
+                    {% endfor %}
+                </select>
+                </td>
+            </tr>
+            <tr><td>Quantity</td><td><input type="text" name="qty"/></td></tr>
+            <tr><td colspan="2" class="center"><input type="submit" name="submit" value="Submit"/></td></tr>
+        </table>
+        </form>
+    </div>
+{% endblock %}

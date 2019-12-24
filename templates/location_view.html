@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/location/list">Back to Location List</a></div>
+    {% if data['count'] == 0 %}
+    <div class="">
+        No such Location
+    </div>
+    {% else %}
+        <h1>
+            {{ data['lid'] }}. {{ data['name'] }}
+            <a href="/location/edit/{{ data['pid'] }}">Edit</a>
+        </h1>
+        <div>
+            <h2>Products</h2>
+            <div>
+                <table border="1">
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                    </tr>
+                    {% for product in data["Product"] %}
+                    <tr>
+                        <td>{{ product }}</td>
+                        <td>{{ data["Product"][product] }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

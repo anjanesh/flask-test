@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/location">Back to Location Index</a></div>
+    <h1>Location List</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        {% for location in data['locations'] %}
+        <tr>
+            <td>{{ location.product_id }}</td>
+            <td>{{ location.name }}</td>
+            <td><a href="/location/view/{{ location.location_id }}">View</a</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

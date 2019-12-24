@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Flask Test for Frappe</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  </head>
+  <body>
+    <header>
+    </header>
+    <div id="container">
+      {% block content %}
+          {% with messages = get_flashed_messages(with_categories = true) %}
+              {% if messages %}
+              {{ session['_flashes'] }}
+              <ul>
+                  {% for category, message in messages %}
+                      <li class="alert alert-{{ category }}">{{ message }}</li>
+                  {% endfor %}
+              </ul>
+              {% endif %}
+          {% endwith %}
+          {% block sub_content %}
+          {% endblock %}
+      {% endblock %}
+    </div>
+  </body>
+</html>

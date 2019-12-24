@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/product">Back to Location Index</a></div>
+    <h1>Add Product</h1>
+    <div>
+        <form class="" action="/location/add" method="post">
+            Location Name : <input type="text" name="name"/>
+            <input type="submit" name="submit" value="Submit"/>
+        </form>
+    </div>
+{% endblock %}

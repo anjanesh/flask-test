@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/move">Back to Movement Index</a></div>
+    <h1>Movement List</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Time</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Product</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        {% for movement in data['movements'] %}
+        <tr>
+            <td>{{ movement.movement_id }}</td>
+            <td>{{ movement.timestamp }}</td>
+            <td>{{ movement.from_location }}</td>
+            <td>{{ movement.to_location }}</td>
+            <td>{{ movement.name }}</td>
+            <td>{{ movement.qty }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

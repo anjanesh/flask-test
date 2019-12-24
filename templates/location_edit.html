@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/location/view/{{ data['pid'] }}">Back to Location View</a></div>
+    <h1>Edit Location</h1>
+    <div>
+        {% if data['count'] == 0 %}
+        <div class="">
+            No such Product
+        </div>
+        {% else %}
+        <form class="" action="/location/edit/{{ data['pid'] }}" method="post">
+            Location Name : <input type="text" name="name" value="{{ data['name'] }}"/>
+            <input type="submit" name="submit" value="Save"/>
+        </form>
+        {% endif %}
+    </div>
+{% endblock %}

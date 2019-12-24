@@ -1,0 +1,26 @@
+html, body, div, span, p
+{
+    margin:0;
+    padding:0;
+    border:0;
+    vertical-align: baseline;
+}
+body
+{
+    font-family:Arial;
+    font-size:14px;
+    background-color:#EEEFF6;
+}
+html
+{
+    height:100%;
+}
+body
+{
+    min-height:100%;
+    position:relative;
+}
+a
+{
+    color:#2e5ee7;
+}

@@ -1,0 +1,15 @@
+.left { float:left; }
+.right { float:right; }
+.center { text-align:center; }
+.clear { clear:both; }
+.none { display:none; }
+.hidden { visibility:hidden; }
+.red { color:red; }
+
+#container
+{
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    padding:10px;
+}

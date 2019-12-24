@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/">Back to Index</a></div>
+    <div class="none">{{ data }}</div>
+    <div style="margin-top:20px">
+        <table border="1">
+            <tr>
+                <th>Product</th>
+                <th>Location</th>
+                <th>Quantity</th>
+            </tr>
+            {% for product in data %}
+                {% for location in data[product] %}
+                <tr>
+                    <td>{{ product }}</td>
+                    <td>{{ location }}</td>
+                    <td class="center">{{ data[product][location] }}</td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

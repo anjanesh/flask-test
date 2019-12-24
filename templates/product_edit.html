@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block sub_content %}
+    <div><a href="/product/view/{{ data['pid'] }}">Back to Product View</a></div>
+    <h1>Edit Product</h1>
+    <div>
+        {% if data['count'] == 0 %}
+        <div class="">
+            No such Product
+        </div>
+        {% else %}
+        <form class="" action="/product/edit/{{ data['pid'] }}" method="post">
+            Product Name : <input type="text" name="name" value="{{ data['name'] }}"/>
+            <input type="submit" name="submit" value="Save"/>
+        </form>
+        {% endif %}
+    </div>
+{% endblock %}
