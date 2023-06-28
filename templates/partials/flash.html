@@ -1,0 +1,16 @@
+{% with messages = get_flashed_messages(with_categories = true) %}
+{% if messages %}
+    {{ session['_flashes'] }}
+    <ul>
+        {% for category, message in messages %}
+            {% if category == 'success' %}
+                <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                    <span class="font-medium">Success !</span> {{ message }}    
+                </div>
+            {% else %}
+                <li class="alert alert-{{ category }}">{{ message }}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endwith %}

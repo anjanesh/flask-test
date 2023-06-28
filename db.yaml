@@ -2,3 +2,4 @@ mysql_host: 'localhost'
 mysql_user: 'root'
 mysql_password: 'lekshminarayanan'
 mysql_db: 'flask-test'
+mysql_port: 3307
