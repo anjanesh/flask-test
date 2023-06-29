@@ -50,28 +50,8 @@ def product_view(pid):
         row = cur.fetchone()
         if row is not None:
             data['name'] = row['name']
-            sql = """
-            SELECT pm.`from_location`, pm.`to_location`, pm.`qty`,
-            (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`from_location`) AS `from_location_name`,
-            (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`to_location`) AS `to_location_name`
-            FROM `ProductMovement` pm
-            WHERE pm.`product_id` = %s
-            """ % (pid)
-            cur.execute(sql)
-            pm_rows = cur.fetchall()
-            data["Location"] = dict()
-
-            for pm_row in pm_rows:
-
-                if pm_row['from_location'] != 0:
-                    if pm_row['from_location_name'] not in data["Location"]:
-                        data["Location"][pm_row['from_location_name']] = 0
-                    data["Location"][pm_row['from_location_name']] -= pm_row['qty']
-
-                if pm_row['to_location'] != 0:
-                    if pm_row['to_location_name'] not in data["Location"]:
-                        data["Location"][pm_row['to_location_name']] = 0
-                    data["Location"][pm_row['to_location_name']] += pm_row['qty']
+            data['Location'] = data_movement(pid, 'Location')
+            print("data['Location'] = ", data['Location'])
 
     return render_template('product_view.html', data = data)
 
@@ -251,14 +231,6 @@ def move():
 def move_list():
     data = {}
     cur = mysql.connection.cursor()
-    """
-    SELECT
-    pm.movement_id, pm.timestamp, pm.qty,
-    (SELECT name FROM Product p where pm.product_id = p.product_id) as name,
-    (SELECT name FROM Location l where pm.from_location = l.location_id) as from_location,
-    (SELECT name FROM Location l where pm.to_location = l.location_id) as to_location
-    FROM `ProductMovement` pm
-    """
     sql = """
     SELECT
     pm.movement_id, pm.timestamp, pm.qty,
@@ -348,7 +320,7 @@ def move_move():
             SELECT pm.`from_location`, pm.`to_location`, pm.`qty`
             FROM `ProductMovement` pm
             WHERE pm.`product_id` = %s AND pm.`to_location` = %s
-            """ % (product_id, from_location_id) # Frm Vashi to Seawoods, need to look how many products are there in Vashi (from_location_id)
+            """ % (product_id, from_location_id) # From Vashi to Seawoods, need to look how many products are there in Vashi (from_location_id)
             cur.execute(sql)
             pm_rows = cur.fetchall()
             data["Product_in_Location"] = 0
@@ -405,33 +377,43 @@ def balance():
     result_value = cur.execute("SELECT * FROM `Product`;")
     if result_value > 0:
         rows = cur.fetchall()
-        for row in rows:
-
-            sql = """
-            SELECT pm.`from_location`, pm.`to_location`, pm.`qty`,
-            (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`from_location`) AS `from_location_name`,
-            (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`to_location`) AS `to_location_name`
-            FROM `ProductMovement` pm
-            WHERE pm.`product_id` = %s
-            """ % (row['product_id'])
-            cur.execute(sql)
-            pm_rows = cur.fetchall()
-
-            data[row['name']] = dict()
-
-            for pm_row in pm_rows:
-
-                if pm_row['from_location'] != 0:
-                    if pm_row['from_location_name'] not in data[row['name']]:
-                        data[row['name']][pm_row['from_location_name']] = 0
-                    data[row['name']][pm_row['from_location_name']] -= pm_row['qty']
-
-                if pm_row['to_location'] != 0:
-                    if pm_row['to_location_name'] not in data[row['name']]:
-                        data[row['name']][pm_row['to_location_name']] = 0
-                    data[row['name']][pm_row['to_location_name']] += pm_row['qty']
-
+        for row in rows:            
+            data[row['name']] = data_movement(row['product_id'], row['name'])
     return render_template('balance.html', data = data)
+
+def data_movement(product_id, dict_index):
+    data = {}
+    cur = mysql.connection.cursor()
+    
+    sql = """
+    SELECT pm.`from_location`, pm.`to_location`, pm.`qty`,
+    (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`from_location`) AS `from_location_name`,
+    (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`to_location`) AS `to_location_name`
+    FROM `ProductMovement` pm
+    WHERE pm.`product_id` = %s
+    """ % (product_id)
+    cur.execute(sql)
+    pm_rows = cur.fetchall()
+
+    data[dict_index] = dict()
+
+    for pm_row in pm_rows:
+
+        if pm_row['from_location'] != 0:
+            if pm_row['from_location_name'] not in data[dict_index]:
+                data[dict_index][pm_row['from_location_name']] = 0
+            data[dict_index][pm_row['from_location_name']] -= pm_row['qty']
+
+        if pm_row['to_location'] != 0:
+            if pm_row['to_location_name'] not in data[dict_index]:
+                data[dict_index][pm_row['to_location_name']] = 0
+            data[dict_index][pm_row['to_location_name']] += pm_row['qty']
+
+    print("data_movement = ", data)
+    print("data_movement[dict_index] = ", data[dict_index])
+    
+    return data[dict_index]
+
 
 @app.errorhandler(404)
 def page_not_found(e):
