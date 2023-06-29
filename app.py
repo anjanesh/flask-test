@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, session, flash, redirect
 from flask_mysqldb import MySQL
 import yaml, os
-
+from flask import g
 import importlib
 
 app = Flask(__name__)
@@ -18,99 +18,100 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 app.config['SECRET_KEY'] = os.urandom(24)
 
+@app.before_request
+def before_request():
+    g.db = mysql.connection
+    g.cur = g.db.cursor()
+
 @app.route('/')
 def index():
     data = {}
     data['users'] = []
     return render_template('index.html', data = data)
 
+# Product
 @app.route('/product')
 def product():
     return render_template('product.html')
 
 @app.route('/product/list')
-def product_list():
-    data = {}
-    cur = mysql.connection.cursor()
-    result_value = cur.execute("SELECT * FROM `Product`;")
+def product_list():    
+    result_value = g.cur.execute("SELECT * FROM `Product`;")
     if result_value > 0:
-        data['products'] = cur.fetchall()
-    return render_template('product_list.html', data = data)
+        data = {'products': g.cur.fetchall()}        
+    return render_template('product_list.html', data=data if data else {})
 
 @app.route('/product/view/<pid>')
 def product_view(pid):
-    data = {}
-    data['pid'] = pid
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM `Product` WHERE `product_id` = %s;", [pid])
-    data['count'] = cur.rowcount
-    if cur.rowcount == 0:
+    data = {'pid': pid}
+    g.cur.execute("SELECT * FROM `Product` WHERE `product_id` = %s;", [pid])
+    data['count'] = g.cur.rowcount
+    if g.cur.rowcount == 0:
         flash("No such product id")
     else:
-        row = cur.fetchone()
+        row = g.cur.fetchone()
         if row is not None:
             data['name'] = row['name']
-            data['Location'] = data_movement(pid, 'Location')
-            print("data['Location'] = ", data['Location'])
+            data['Location'] = data_movement(pid, 'Location')            
 
     return render_template('product_view.html', data = data)
 
 @app.route('/product/add', methods = ['GET', 'POST'])
 def product_add():
     if request.method == 'POST':
-        try:
-            if "name" in request.form:
-                name = request.form['name']
-                if name:
-                    cur = mysql.connection.cursor()
-                    cur.execute("INSERT INTO `Product` (`product_id`, `name`) VALUES (NULL, %s); ", [name])
-                    mysql.connection.commit()
-                    flash("Successfully added product", "success")
-                    return redirect(("/product/view/%s" % (cur.lastrowid)), code=302) # This is to disable refresh
-                else:
-                    flash("Product name cannot be empty")
-            else:
-                return "No hacking !"
-        except Exception as e:
-            flash("Error : {}".format(e), "danger")
-
+        add_edit_product(crud="add")
     return render_template('product_add.html')
 
 @app.route('/product/edit/<pid>', methods = ['GET', 'POST'])
 def product_edit(pid):
-    data = {}
-    data['pid'] = pid
-    cur = mysql.connection.cursor()
 
     if request.method == 'POST':
-        try:
-            if "name" in request.form:
-                name = request.form['name']
-                if name:
-                    cur = mysql.connection.cursor()
-                    cur.execute("UPDATE `Product` SET `name` = '%s' WHERE `product_id` = %s;" % (name, pid))
-                    mysql.connection.commit()
-                    data['name'] = name
-                    flash("Successfully updated product", "success")
-                else:
-                    flash("Product name cannot be empty")
-            else:
-                return "No hacking !"
-        except Exception as e:
-            flash("Error : {}".format(e), "danger")
-            # print("UPDATE `Product` SET `name` = '%s' WHERE `product_id` = %s);" % (name, pid))
+        return product_edit_post(pid)
     else:
-        cur.execute("SELECT * FROM `Product` WHERE `product_id` = %s;", [pid])
-        data['count'] = cur.rowcount
-        if cur.rowcount == 0:
-            flash("No such product id")
+        data = product_edit_get(pid)
+        return render_template('product_edit.html', data = data)
+    
+
+def product_edit_get(pid):    
+    g.cur.execute("SELECT * FROM `Product` WHERE `product_id` = %s;", [pid])
+    
+    data = { 'pid': pid, 'count': g.cur.rowcount }
+
+    if g.cur.rowcount == 0:
+        flash("No such product id")
+    else:
+        row = g.cur.fetchone()
+        if row is not None:
+            data['name'] = row['name']
+
+    return data
+
+def product_edit_post(pid):
+    return add_edit_product("edit", pid)    
+
+def add_edit_product(crud="add", pid=0):
+    try:
+        if "name" in request.form:
+            name = request.form['name']
+            if name:     
+                if crud == "add":
+                    g.cur.execute("INSERT INTO `Product` (`product_id`, `name`) VALUES (NULL, %s); ", [name])
+                elif crud == "edit":
+                    g.cur.execute("UPDATE `Product` SET `name` = '%s' WHERE `product_id` = %s;" % (name, pid))                
+                
+                mysql.connection.commit()
+                flash("Successfully {} product".format("added" if crud == "add" else "updated"), "success")
+
+                return redirect("/product/view/%s" % (g.cur.lastrowid if crud == "add" else pid), code=302) # This is to disable refresh
+            else:
+                flash("Product name cannot be empty")
         else:
-            row = cur.fetchone()
-            if row is not None:
-                data['name'] = row['name']
+            return "No hacking !"
+    except Exception as e:
+        flash("Error : {}".format(e), "danger")
 
+    return None
 
-    return render_template('product_edit.html', data = data)
 
 # Location
 @app.route('/location')
@@ -120,23 +121,23 @@ def location():
 @app.route('/location/list')
 def location_list():
     data = {}
-    cur = mysql.connection.cursor()
-    result_value = cur.execute("SELECT * FROM `Location`;")
+    
+    result_value = g.cur.execute("SELECT * FROM `Location`;")
     if result_value > 0:
-        data['locations'] = cur.fetchall()
+        data['locations'] = g.cur.fetchall()
     return render_template('location_list.html', data = data)
 
 @app.route('/location/view/<lid>')
 def location_view(lid):
     data = {}
     data['lid'] = lid
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM `Location` WHERE `location_id` = %s;", [lid])
-    data['count'] = cur.rowcount
-    if cur.rowcount == 0:
+    
+    g.cur.execute("SELECT * FROM `Location` WHERE `location_id` = %s;", [lid])
+    data['count'] = g.cur.rowcount
+    if g.cur.rowcount == 0:
         flash("No such location id")
     else:
-        row = cur.fetchone()
+        row = g.cur.fetchone()
         if row is not None:
             data['name'] = row['name']
 
@@ -148,8 +149,8 @@ def location_view(lid):
             pm.`from_location` = %s OR
             pm.`to_location` = %s
             """ % (lid, lid)
-            cur.execute(sql)
-            pm_rows = cur.fetchall()
+            g.cur.execute(sql)
+            pm_rows = g.cur.fetchall()
             data["Product"] = dict()
 
             for pm_row in pm_rows:
@@ -174,11 +175,11 @@ def location_add():
             if "name" in request.form:
                 name = request.form['name']
                 if name:
-                    cur = mysql.connection.cursor()
-                    cur.execute("INSERT INTO `Location` (`location_id`, `name`) VALUES (NULL, %s); ", [name])
+                    
+                    g.cur.execute("INSERT INTO `Location` (`location_id`, `name`) VALUES (NULL, %s); ", [name])
                     mysql.connection.commit()
                     flash("Successfully added product", "success")
-                    return redirect(("/location/view/%s" % (cur.lastrowid)), code=302) # This is to disable refresh
+                    return redirect(("/location/view/%s" % (g.cur.lastrowid)), code=302) # This is to disable refresh
                 else:
                     flash("Location name cannot be empty")
             else:
@@ -192,15 +193,15 @@ def location_add():
 def location_edit(pid):
     data = {}
     data['pid'] = pid
-    cur = mysql.connection.cursor()
+    
 
     if request.method == 'POST':
         try:
             if "name" in request.form:
                 name = request.form['name']
                 if name:
-                    cur = mysql.connection.cursor()
-                    cur.execute("UPDATE `Location` SET `name` = '%s' WHERE `location_id` = %s;" % (name, pid))
+                    
+                    g.cur.execute("UPDATE `Location` SET `name` = '%s' WHERE `location_id` = %s;" % (name, pid))
                     mysql.connection.commit()
                     data['name'] = name
                     flash("Successfully updated location", "success")
@@ -211,12 +212,12 @@ def location_edit(pid):
         except Exception as e:
             flash("Error : {}".format(e), "danger")
     else:
-        cur.execute("SELECT * FROM `Location` WHERE `location_id` = %s;", [pid])
-        data['count'] = cur.rowcount
-        if cur.rowcount == 0:
+        g.cur.execute("SELECT * FROM `Location` WHERE `location_id` = %s;", [pid])
+        data['count'] = g.cur.rowcount
+        if g.cur.rowcount == 0:
             flash("No such location id")
         else:
-            row = cur.fetchone()
+            row = g.cur.fetchone()
             if row is not None:
                 data['name'] = row['name']
 
@@ -230,7 +231,7 @@ def move():
 @app.route('/move/list')
 def move_list():
     data = {}
-    cur = mysql.connection.cursor()
+    
     sql = """
     SELECT
     pm.movement_id, pm.timestamp, pm.qty,
@@ -239,15 +240,15 @@ def move_list():
     (SELECT name FROM Location l where pm.to_location = l.location_id) as to_location
     FROM `ProductMovement` pm
     """
-    result_value = cur.execute(sql)
+    result_value = g.cur.execute(sql)
     if result_value > 0:
-        data['movements'] = cur.fetchall()
+        data['movements'] = g.cur.fetchall()
     return render_template('move_list.html', data = data)
 
 @app.route('/move/push', methods = ['GET', 'POST'])
 def move_push():
     data = {}
-    cur = mysql.connection.cursor()
+    
     if request.method == 'POST':
         try:
             """
@@ -274,25 +275,25 @@ def move_push():
              `product_id` = %s,
              `qty` = %s
             """ % (location_id, product_id, qty)
-            cur.execute(sql)
+            g.cur.execute(sql)
             mysql.connection.commit()
             flash("Successfully added product to location", "success")
             return redirect("/move/list", code=302) # This is to disable refresh
         except Exception as e:
             flash("Error : {}".format(e), "danger")
     else:
-        cur.execute("SELECT * FROM `Product`")
-        if cur.rowcount == 0:
+        g.cur.execute("SELECT * FROM `Product`")
+        if g.cur.rowcount == 0:
             return "No Products yet"
         else:
-            row = cur.fetchall()
+            row = g.cur.fetchall()
             data['products'] = row
 
-        cur.execute("SELECT * FROM `Location`")
-        if cur.rowcount == 0:
+        g.cur.execute("SELECT * FROM `Location`")
+        if g.cur.rowcount == 0:
             return "No Locations yet"
         else:
-            row = cur.fetchall()
+            row = g.cur.fetchall()
             data['locations'] = row
 
 
@@ -301,13 +302,13 @@ def move_push():
 @app.route('/move/pop', methods = ['GET', 'POST'])
 def move_pop():
     data = {}
-    cur = mysql.connection.cursor()
+    
     return render_template('move_pop.html', data = data)
 
 @app.route('/move/move', methods = ['GET', 'POST'])
 def move_move():
     data = {}
-    cur = mysql.connection.cursor()
+    
 
     if request.method == 'POST':
         try:
@@ -321,8 +322,8 @@ def move_move():
             FROM `ProductMovement` pm
             WHERE pm.`product_id` = %s AND pm.`to_location` = %s
             """ % (product_id, from_location_id) # From Vashi to Seawoods, need to look how many products are there in Vashi (from_location_id)
-            cur.execute(sql)
-            pm_rows = cur.fetchall()
+            g.cur.execute(sql)
+            pm_rows = g.cur.fetchall()
             data["Product_in_Location"] = 0
 
             for pm_row in pm_rows:
@@ -347,25 +348,25 @@ def move_move():
              `product_id` = %s,
              `qty` = %s
             """ % (from_location_id, to_location_id, product_id, qty)
-            cur.execute(sql)
+            g.cur.execute(sql)
             mysql.connection.commit()
             flash("Successfully moved product to location", "success")
             return redirect("/move/list", code=302) # This is to disable refresh
         except Exception as e:
             flash("Error : {}".format(e), "danger")
     else:
-        cur.execute("SELECT * FROM `Product`")
-        if cur.rowcount == 0:
+        g.cur.execute("SELECT * FROM `Product`")
+        if g.cur.rowcount == 0:
             return "No Products yet"
         else:
-            row = cur.fetchall()
+            row = g.cur.fetchall()
             data['products'] = row
 
-        cur.execute("SELECT * FROM `Location`")
-        if cur.rowcount == 0:
+        g.cur.execute("SELECT * FROM `Location`")
+        if g.cur.rowcount == 0:
             return "No Locations yet"
         else:
-            row = cur.fetchall()
+            row = g.cur.fetchall()
             data['locations'] = row
 
     return render_template('move_move.html', data = data)
@@ -373,18 +374,16 @@ def move_move():
 @app.route('/balance')
 def balance():
     data = {}
-    cur = mysql.connection.cursor()
-    result_value = cur.execute("SELECT * FROM `Product`;")
+    
+    result_value = g.cur.execute("SELECT * FROM `Product`;")
     if result_value > 0:
-        rows = cur.fetchall()
+        rows = g.cur.fetchall()
         for row in rows:            
             data[row['name']] = data_movement(row['product_id'], row['name'])
     return render_template('balance.html', data = data)
 
 def data_movement(product_id, dict_index):
-    data = {}
-    cur = mysql.connection.cursor()
-    
+    data = {}    
     sql = """
     SELECT pm.`from_location`, pm.`to_location`, pm.`qty`,
     (SELECT `name` FROM Location l WHERE l.`location_id` = pm.`from_location`) AS `from_location_name`,
@@ -392,8 +391,8 @@ def data_movement(product_id, dict_index):
     FROM `ProductMovement` pm
     WHERE pm.`product_id` = %s
     """ % (product_id)
-    cur.execute(sql)
-    pm_rows = cur.fetchall()
+    g.cur.execute(sql)
+    pm_rows = g.cur.fetchall()
 
     data[dict_index] = dict()
 
@@ -418,6 +417,13 @@ def data_movement(product_id, dict_index):
 @app.errorhandler(404)
 def page_not_found(e):
     return "This page was not found"
+
+# @app.teardown_request
+# def teardown_request(exception):
+#     if hasattr(g, 'cur'):
+#         g.cur.close()
+#     if hasattr(g, 'db'):
+#         g.db.close()
 
 if __name__ == "__main__":
     app.run(debug=True);
