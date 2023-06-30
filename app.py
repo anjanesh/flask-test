@@ -3,10 +3,13 @@ from flask_mysqldb import MySQL
 import yaml, os
 from flask import g
 import importlib
+import sqls
 
 app = Flask(__name__)
 
-with open('db.yaml', 'r') as file:
+yaml_file_path = os.path.join(os.path.dirname(__file__), 'db.yaml')
+
+with open(yaml_file_path, 'r') as file:
     db = yaml.load(file, Loader=yaml.SafeLoader)
 
 app.config['MYSQL_HOST'] = db['mysql_host']
@@ -120,8 +123,7 @@ def location():
 
 @app.route('/location/list')
 def location_list():
-    data = {}
-    
+    data = {}    
     result_value = g.cur.execute("SELECT * FROM `Location`;")
     if result_value > 0:
         data['locations'] = g.cur.fetchall()
@@ -129,8 +131,7 @@ def location_list():
 
 @app.route('/location/view/<lid>')
 def location_view(lid):
-    data = {}
-    data['lid'] = lid
+    data = { 'lid': lid }    
     
     g.cur.execute("SELECT * FROM `Location` WHERE `location_id` = %s;", [lid])
     data['count'] = g.cur.rowcount
@@ -139,17 +140,9 @@ def location_view(lid):
     else:
         row = g.cur.fetchone()
         if row is not None:
-            data['name'] = row['name']
 
-            sql = """
-            SELECT pm.`from_location`, pm.`to_location`, pm.`product_id`, pm.`qty`,
-            (SELECT `name` FROM Product p WHERE p.`product_id` = pm.`product_id`) AS `product_name`
-            FROM `ProductMovement` pm
-            WHERE
-            pm.`from_location` = %s OR
-            pm.`to_location` = %s
-            """ % (lid, lid)
-            g.cur.execute(sql)
+            data['name'] = row['name']
+            g.cur.execute(sqls.ProductMovement % (lid, lid))
             pm_rows = g.cur.fetchall()
             data["Product"] = dict()
 
@@ -174,9 +167,8 @@ def location_add():
         try:
             if "name" in request.form:
                 name = request.form['name']
-                if name:
-                    
-                    g.cur.execute("INSERT INTO `Location` (`location_id`, `name`) VALUES (NULL, %s); ", [name])
+                if name:                    
+                    g.cur.execute(sqls.location_add, [name])
                     mysql.connection.commit()
                     flash("Successfully added product", "success")
                     return redirect(("/location/view/%s" % (g.cur.lastrowid)), code=302) # This is to disable refresh
@@ -201,7 +193,7 @@ def location_edit(pid):
                 name = request.form['name']
                 if name:
                     
-                    g.cur.execute("UPDATE `Location` SET `name` = '%s' WHERE `location_id` = %s;" % (name, pid))
+                    g.cur.execute(sqls.location_edit % (name, pid))
                     mysql.connection.commit()
                     data['name'] = name
                     flash("Successfully updated location", "success")
@@ -231,16 +223,7 @@ def move():
 @app.route('/move/list')
 def move_list():
     data = {}
-    
-    sql = """
-    SELECT
-    pm.movement_id, pm.timestamp, pm.qty,
-    (SELECT name FROM Product p where pm.product_id = p.product_id) as name,
-    (SELECT name FROM Location l where pm.from_location = l.location_id) as from_location,
-    (SELECT name FROM Location l where pm.to_location = l.location_id) as to_location
-    FROM `ProductMovement` pm
-    """
-    result_value = g.cur.execute(sql)
+    result_value = g.cur.execute(sqls.move_list)
     if result_value > 0:
         data['movements'] = g.cur.fetchall()
     return render_template('move_list.html', data = data)
@@ -266,16 +249,7 @@ def move_push():
             product_id = request.form['product_id']
             location_id = request.form['location_id']
             qty = request.form['qty']
-
-            sql = """
-            INSERT INTO `ProductMovement` SET
-            `timestamp` = NOW(),
-            `from_location` = 0,
-            `to_location` = %s,
-             `product_id` = %s,
-             `qty` = %s
-            """ % (location_id, product_id, qty)
-            g.cur.execute(sql)
+            g.cur.execute(sqls.move_push % (location_id, product_id, qty))
             mysql.connection.commit()
             flash("Successfully added product to location", "success")
             return redirect("/move/list", code=302) # This is to disable refresh
@@ -308,8 +282,6 @@ def move_pop():
 @app.route('/move/move', methods = ['GET', 'POST'])
 def move_move():
     data = {}
-    
-
     if request.method == 'POST':
         try:
             product_id = request.form['product_id']
@@ -317,12 +289,8 @@ def move_move():
             to_location_id = request.form['to_location_id']
             qty = request.form['qty']
 
-            sql = """
-            SELECT pm.`from_location`, pm.`to_location`, pm.`qty`
-            FROM `ProductMovement` pm
-            WHERE pm.`product_id` = %s AND pm.`to_location` = %s
-            """ % (product_id, from_location_id) # From Vashi to Seawoods, need to look how many products are there in Vashi (from_location_id)
-            g.cur.execute(sql)
+            # From Vashi to Seawoods, need to look how many products are there in Vashi (from_location_id)
+            g.cur.execute(sqls.ProductMovement_to_Location % (product_id, from_location_id))
             pm_rows = g.cur.fetchall()
             data["Product_in_Location"] = 0
 
@@ -340,15 +308,7 @@ def move_move():
             if data["Product_in_Location"] <= 0:
                 return "No Products in Location"
 
-            sql = """
-            INSERT INTO `ProductMovement` SET
-            `timestamp` = NOW(),
-            `from_location` = %s,
-            `to_location` = %s,
-             `product_id` = %s,
-             `qty` = %s
-            """ % (from_location_id, to_location_id, product_id, qty)
-            g.cur.execute(sql)
+            g.cur.execute(sqls.ProductMovement_add % (from_location_id, to_location_id, product_id, qty))
             mysql.connection.commit()
             flash("Successfully moved product to location", "success")
             return redirect("/move/list", code=302) # This is to disable refresh
