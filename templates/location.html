@@ -1,9 +1,28 @@
 {% extends 'base.html' %}
-{% block sub_content %}
-    <div><a href="/">Back to Main Index</a></div>
-    <h1>Location Index</h1>
-    <ul>
-        <li><a href="/location/add">Add Location</a></li>
-        <li><a href="/location/list">List all Locations</a></li>
-    </ul>
+{% block sub_content %}    
+
+    {% with links=[{"title":"Products", "link":"#"}] %}
+        {% include "partials/breadcrumbs.html" %}
+    {% endwith %}
+    
+    <div class="max-w-screen-xl mx-auto p-4">
+        <h2 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">Location Index</h2>
+
+        <div class="flex justify-evenly">
+            <div class="text-center">
+                <a href="/location/add">
+                    <img src="static/icons/location.svg" width="150" height="150"/>
+                    Add Location
+                </a>
+            </div>
+            <div class="text-center">
+                <a href="/location/list">
+                    <img src="static/icons/train-station.svg" width="150" height="150"/>
+                    List All Locations
+                </a>
+            </div>
+        </div>
+
+    </div>
+
 {% endblock %}

@@ -42,3 +42,11 @@ INSERT INTO `ProductMovement` SET
 `product_id` = %s,
 `qty` = %s
 """
+
+data_movement = """
+SELECT pm.`from_location`, pm.`to_location`, pm.`qty`,
+(SELECT `name` FROM Location l WHERE l.`location_id` = pm.`from_location`) AS `from_location_name`,
+(SELECT `name` FROM Location l WHERE l.`location_id` = pm.`to_location`) AS `to_location_name`
+FROM `ProductMovement` pm
+WHERE pm.`product_id` = %s
+"""

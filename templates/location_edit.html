@@ -1,17 +1,28 @@
 {% extends 'base.html' %}
 {% block sub_content %}
-    <div><a href="/location/view/{{ data['pid'] }}">Back to Location View</a></div>
-    <h1>Edit Location</h1>
+
+    {% with links=[{"title":"Locations", "link":"/location"}, {"title":"View", "link":"/location/view/" ~ data['lid'] }, {"title":"Edit", "link":"#"}] %}
+        {% include "partials/breadcrumbs.html" %}
+    {% endwith %}
+
+    {% include 'partials/flash.html' %}
+    
     <div>
         {% if data['count'] == 0 %}
         <div class="">
-            No such Product
+            No such Location
         </div>
         {% else %}
-        <form class="" action="/location/edit/{{ data['pid'] }}" method="post">
-            Location Name : <input type="text" name="name" value="{{ data['name'] }}"/>
-            <input type="submit" name="submit" value="Save"/>
-        </form>
+        <div class="max-w-screen-xl mx-auto p-4">
+            <h2 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">Edit Product</h2>
+            <form class="" action="/product/edit/{{ data['lid'] }}" method="post">
+                <div class="mb-6">
+                  <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Location Name</label>
+                  <input type="name" id="name" name="name" value="{{ data['name'] }}" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:shadow-sm-light" required />
+                </div>
+                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Save Product</button>
+            </form>
+        </div>    
         {% endif %}
     </div>
 {% endblock %}
