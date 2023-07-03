@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% block sub_content %}
-    <div><a href="/">Back to Main Index</a></div>
-    <h1>Move Index</h1>
-    <ul>
-        <li><a href="/move/list">List all</a></li>
-        <li><a href="/move/push">Push Products to Location</a></li>
-        <li><a href="/move/pop">Pop Products from Location</a></li>
-        <li><a href="/move/move">Move Products within Locations</a></li>
-    </ul>
+
+    {% with links=[{"title":"Move", "link":"#"}] %}
+        {% include "partials/breadcrumbs.html" %}
+    {% endwith %}
+
+    <div class="grid gap-5 grid-cols-2">
+        <div><a href="/move/list">List all Movements</a></div>
+        <div><a href="/move/push">Push Products to Location</a></div>
+        <div><a href="/move/pop">Pop Products from Location</a></div>
+        <div><a href="/move/move">Move Products within Locations</a></div>
+    </div>
 {% endblock %}

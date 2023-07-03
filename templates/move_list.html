@@ -1,27 +1,62 @@
 {% extends 'base.html' %}
 {% block sub_content %}
-    <div><a href="/move">Back to Movement Index</a></div>
-    <h1>Movement List</h1>
-    <table border="1">
-        <thead>
+
+    {% with links=[{"title":"Movement", "link":"/move"}, {"title":"List", "link":"#"}] %}
+        {% include "partials/breadcrumbs.html" %}
+    {% endwith %}
+    
+    <div class="max-w-screen-xl mx-auto p-4">
+        <h2 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">Movement List</h2>
+    </div>
+
+    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-                <th>ID</th>
-                <th>Time</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Product</th>
-                <th>Quantity</th>
+                <th scope="col" class="px-6 py-3">
+                    ID
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    Time
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    From
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    To
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    Product
+                </th>
+                <th scope="col" class="px-6 py-3">
+                    Quantity
+                </th>
             </tr>
         </thead>
-        {% for movement in data['movements'] %}
-        <tr>
-            <td>{{ movement.movement_id }}</td>
-            <td>{{ movement.timestamp }}</td>
-            <td>{{ movement.from_location }}</td>
-            <td>{{ movement.to_location }}</td>
-            <td>{{ movement.name }}</td>
-            <td>{{ movement.qty }}</td>
-        </tr>
-        {% endfor %}
+        <tbody>
+            {% for movement in data['movements'] %}
+            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {{ movement.movement_id }}
+                </th>
+                <td class="px-6 py-4">
+                    {{ movement.timestamp }}
+                </td>
+                <td class="px-6 py-4">
+                    {{ movement.from_location }}
+                </td>
+                <td class="px-6 py-4">
+                    {{ movement.to_location }}
+                </td>
+                <td class="px-6 py-4">
+                    {{ movement.name }}
+                </td>
+                <td class="px-6 py-4">
+                    {{ movement.qty }}
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
+
 {% endblock %}
